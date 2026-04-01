@@ -1,7 +1,7 @@
 {
-  "name": "@anthropic-ai/claude-code",
+  "name": "cookiesheeps-claude-code",
   "version": "2.1.88",
-  "description": "Use Claude, Anthropic's AI assistant, right from your terminal.",
+  "description": "cookiesheep's claude-code - A custom build of Claude Code",
   "bin": {
     "claude": "cli.js"
   },
@@ -9,7 +9,7 @@
     "node": ">=18.0.0"
   },
   "type": "module",
-  "author": "Anthropic <support@anthropic.com>",
+  "author": "cookiesheep",
   "license": "SEE LICENSE IN README.md",
   "homepage": "https://github.com/anthropics/claude-code",
   "bugs": {
