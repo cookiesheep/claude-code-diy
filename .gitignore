@@ -1,6 +1,8 @@
 # Logs
 logs
 *.log
+crash.log
+debug.txt
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -69,6 +71,12 @@ web_modules/
 .env
 .env.*
 !.env.example
+
+# Conversation exports & debug
+conversation-*.txt
+
+# Local start scripts with real API keys
+start-local.*
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache

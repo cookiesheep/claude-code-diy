@@ -131,6 +131,9 @@ export function ThemePicker(t0) {
     }, {
       label: "Light mode (ANSI colors only)",
       value: "light-ansi"
+    }, {
+      label: "🌊 Dark Cyan (cookiesheep)",
+      value: "dark-cyan"
     }];
     $[7] = t10;
   } else {

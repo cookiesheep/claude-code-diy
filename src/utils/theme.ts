@@ -95,6 +95,7 @@ export const THEME_NAMES = [
   'dark-daltonized',
   'light-ansi',
   'dark-ansi',
+  'dark-cyan',
 ] as const
 
 /** A renderable theme. Always resolvable to a concrete color palette. */
@@ -595,6 +596,84 @@ const darkDaltonizedTheme: Theme = {
   rainbow_violet_shimmer: 'rgb(230,180,210)',
 }
 
+/**
+ * cookiesheep's dark cyan theme — 青蓝色暗色主题
+ * 品牌色从橙色改为青蓝色系，整体冷色调
+ */
+const darkCyanTheme: Theme = {
+  autoAccept: 'rgb(100,220,255)',       // 亮青色
+  bashBorder: 'rgb(0,200,180)',         // 青绿色
+  claude: 'rgb(80,200,220)',            // 青蓝品牌色（原来是橙色）
+  claudeShimmer: 'rgb(120,230,245)',    // 亮青蓝
+  claudeBlue_FOR_SYSTEM_SPINNER: 'rgb(100,180,255)',
+  claudeBlueShimmer_FOR_SYSTEM_SPINNER: 'rgb(140,210,255)',
+  permission: 'rgb(130,190,255)',       // 浅蓝
+  permissionShimmer: 'rgb(170,215,255)',
+  planMode: 'rgb(60,180,160)',          // 青绿
+  ide: 'rgb(80,160,220)',
+  promptBorder: 'rgb(100,140,160)',     // 青灰边框
+  promptBorderShimmer: 'rgb(140,180,200)',
+  text: 'rgb(230,245,250)',             // 微青白色文字
+  inverseText: 'rgb(10,20,30)',
+  inactive: 'rgb(120,150,160)',         // 青灰
+  inactiveShimmer: 'rgb(160,190,200)',
+  subtle: 'rgb(50,70,80)',
+  suggestion: 'rgb(100,200,240)',       // 亮青
+  remember: 'rgb(100,200,240)',
+  background: 'rgb(0,200,220)',         // 青色背景高亮
+  success: 'rgb(80,220,140)',           // 青绿成功色
+  error: 'rgb(255,100,120)',            // 珊瑚红
+  warning: 'rgb(255,200,60)',           // 暖黄
+  merged: 'rgb(160,140,255)',           // 淡紫
+  warningShimmer: 'rgb(255,225,100)',
+  diffAdded: 'rgb(20,80,60)',
+  diffRemoved: 'rgb(100,30,40)',
+  diffAddedDimmed: 'rgb(40,70,60)',
+  diffRemovedDimmed: 'rgb(80,50,55)',
+  diffAddedWord: 'rgb(60,200,140)',
+  diffRemovedWord: 'rgb(220,90,110)',
+  // Agent colors
+  red_FOR_SUBAGENTS_ONLY: 'rgb(220,80,80)',
+  blue_FOR_SUBAGENTS_ONLY: 'rgb(80,150,255)',
+  green_FOR_SUBAGENTS_ONLY: 'rgb(60,200,120)',
+  yellow_FOR_SUBAGENTS_ONLY: 'rgb(230,200,60)',
+  purple_FOR_SUBAGENTS_ONLY: 'rgb(160,100,240)',
+  orange_FOR_SUBAGENTS_ONLY: 'rgb(240,140,50)',
+  pink_FOR_SUBAGENTS_ONLY: 'rgb(230,100,160)',
+  cyan_FOR_SUBAGENTS_ONLY: 'rgb(60,210,210)',
+  professionalBlue: 'rgb(100,170,230)',
+  chromeYellow: 'rgb(251,188,4)',
+  // TUI V2 — 深色青蓝底
+  clawd_body: 'rgb(80,200,220)',        // 小动物颜色也改成青蓝
+  clawd_background: 'rgb(10,20,30)',
+  userMessageBackground: 'rgb(25,45,55)',    // 深青灰
+  userMessageBackgroundHover: 'rgb(35,60,70)',
+  messageActionsBackground: 'rgb(30,50,65)',
+  selectionBg: 'rgb(30,80,110)',
+  bashMessageBackgroundColor: 'rgb(30,40,50)',
+  memoryBackgroundColor: 'rgb(25,50,60)',
+  rate_limit_fill: 'rgb(80,200,220)',
+  rate_limit_empty: 'rgb(40,80,90)',
+  fastMode: 'rgb(0,230,200)',           // 青绿快速模式
+  fastModeShimmer: 'rgb(60,250,220)',
+  briefLabelYou: 'rgb(100,190,240)',
+  briefLabelClaude: 'rgb(80,200,220)',
+  rainbow_red: 'rgb(235,95,87)',
+  rainbow_orange: 'rgb(245,139,87)',
+  rainbow_yellow: 'rgb(250,195,95)',
+  rainbow_green: 'rgb(145,200,130)',
+  rainbow_blue: 'rgb(130,170,220)',
+  rainbow_indigo: 'rgb(155,130,200)',
+  rainbow_violet: 'rgb(200,130,180)',
+  rainbow_red_shimmer: 'rgb(250,155,147)',
+  rainbow_orange_shimmer: 'rgb(255,185,137)',
+  rainbow_yellow_shimmer: 'rgb(255,225,155)',
+  rainbow_green_shimmer: 'rgb(185,230,180)',
+  rainbow_blue_shimmer: 'rgb(180,205,240)',
+  rainbow_indigo_shimmer: 'rgb(195,180,230)',
+  rainbow_violet_shimmer: 'rgb(230,180,210)',
+}
+
 export function getTheme(themeName: ThemeName): Theme {
   switch (themeName) {
     case 'light':
@@ -607,6 +686,8 @@ export function getTheme(themeName: ThemeName): Theme {
       return lightDaltonizedTheme
     case 'dark-daltonized':
       return darkDaltonizedTheme
+    case 'dark-cyan':
+      return darkCyanTheme
     default:
       return darkTheme
   }

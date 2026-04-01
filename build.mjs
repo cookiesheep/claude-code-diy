@@ -329,6 +329,12 @@ export const SandboxRuntimeConfigSchema = {};
 export class SandboxViolationStore { constructor() {} }
 export default null;
 `,
+  'color-diff-napi': `// Runtime stub — color-diff-napi native module not available
+export class ColorDiff { constructor() {} render() { return ''; } }
+export class ColorFile { constructor() {} render() { return ''; } }
+export function getSyntaxTheme() { return null; }
+export default null;
+`,
 };
 
 const internalPackages = [

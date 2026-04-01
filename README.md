@@ -1,125 +1,307 @@
+# claude-code-diy
 
-# Claude Code (Unofficial Source Extraction)
+[中文](#中文) | [English](#english)
 
-Follow me at https://x.com/paidev
+---
 
+# 中文
 
+**让 Claude Code 源码真正跑起来，然后随心所欲地改。**
 
-> **This is NOT an official Anthropic repository.**
+Claude Code 官方 npm 包内含完整的 source map，社区从中恢复出了约 1888 个 TypeScript 源文件。但恢复出的源码**无法直接运行**——它是为 Bun 运行时设计的，缺少大量内部依赖，存在路径错误、模块缺失等几十个阻塞问题。
 
-This repository contains the extracted TypeScript source code of [Anthropic's Claude Code](https://www.anthropic.com/) CLI tool — Anthropic's official CLI that lets you interact with Claude directly from the terminal to perform software engineering tasks like editing files, running commands, searching codebases, managing git workflows, and more.
+本项目在恢复源码的基础上，**逐一修复了所有启动阻塞问题**，使完整的 Ink TUI 交互界面可以在标准 Node.js 环境下本地运行。你可以像使用官方 Claude Code 一样在终端中与 Claude 对话，也可以自由探索和修改源码——比如我自己就改了主题色和 Logo。
 
-The source was obtained by unpacking the source map (`cli.js.map`) bundled with the officially published npm package.
+## 运行截图
 
-- **npm package:** [@anthropic-ai/claude-code v2.1.88](https://www.npmjs.com/package/@anthropic-ai/claude-code/v/2.1.88)
-- **Official homepage:** [github.com/anthropics/claude-code](https://github.com/anthropics/claude-code)
+<!-- TODO: 替换为你的实际截图，放到 screenshots/ 目录下 -->
+![运行截图](./screenshots/demo.png)
 
-## How It Leaked
+## 特性
 
-The source code leak was discovered by [Chaofan Shou (@Fried_rice)](https://x.com/Fried_rice) and posted publicly on March 31, 2026:
+- **完整 TUI 交互界面** — 与官方 Claude Code 一致的终端体验
+- **`--print` 无头模式** — 适用于脚本和 CI 场景
+- **Node.js 运行** — 不依赖 Bun，标准 Node.js >= 18 即可
+- **支持第三方 API** — 任何兼容 Anthropic Messages API 的中转/代理
+- **自由探索改造** — 修改主题、Logo、UI 组件，深入学习 Claude Code 内部架构
+- **一键构建** — `node build.mjs` 自动处理所有适配，零手动操作
 
-> *"Claude code source code has been leaked via a map file in their npm registry!"*
->
-> — [@Fried_rice](https://x.com/Fried_rice), March 31, 2026
+## 快速开始
 
-The published npm package (`@anthropic-ai/claude-code`) included a source map file (`cli.js.map`) containing the full, unobfuscated TypeScript source code. The `sourcesContent` field of the source map held every original `.ts`/`.tsx` file that was bundled into `cli.js`, making the entire codebase trivially extractable.
-
-## Why does this exist?
-
-Anthropic publishes Claude Code as a bundled JavaScript CLI on npm. The published package includes a source map file (`cli.js.map`) that contains the original TypeScript source. This repository simply extracts and preserves that source for easier reading and reference.
-
-## How to get it yourself
-
-### Clone this repository
+### 1. 克隆 & 安装
 
 ```bash
-git clone git@github.com:chatgptprojects/claude-code.git
-cd claude-code
+git clone https://github.com/你的用户名/claude-code-diy.git
+cd claude-code-diy
+npm install
 ```
 
-### Or extract it yourself from npm
-
-1. **Install the package:**
+### 2. 构建
 
 ```bash
-mkdir claude-code-extract && cd claude-code-extract
-npm pack @anthropic-ai/claude-code@2.1.88
-tar -xzf anthropic-ai-claude-code-2.1.88.tgz
-cd package
+node build.mjs
 ```
 
-2. **Run the unpack script:**
-
-Create a file called `unpack.mjs`:
-
-```js
-import { readFileSync, writeFileSync, mkdirSync } from "fs";
-import { dirname, join } from "path";
-
-const mapFile = join(import.meta.dirname, "cli.js.map");
-const outDir = join(import.meta.dirname, "unpacked");
-
-console.log("Reading source map...");
-const map = JSON.parse(readFileSync(mapFile, "utf-8"));
-
-const sources = map.sources || [];
-const contents = map.sourcesContent || [];
-
-console.log(`Found ${sources.length} source files.`);
-
-let written = 0;
-let skipped = 0;
-
-for (let i = 0; i < sources.length; i++) {
-  const src = sources[i];
-  const content = contents[i];
-
-  if (content == null) {
-    skipped++;
-    continue;
-  }
-
-  const outPath = join(outDir, src.replace(/^\.\.\//g, ""));
-  mkdirSync(dirname(outPath), { recursive: true });
-  writeFileSync(outPath, content);
-  written++;
-}
-
-console.log(`Done! Wrote ${written} files to ${outDir}`);
-if (skipped > 0) console.log(`Skipped ${skipped} files with no content.`);
-```
-
-3. **Run it:**
+### 3. 配置 API
 
 ```bash
-node unpack.mjs
+cp .env.example .env
 ```
 
-The extracted source will be in the `unpacked/` directory.
+编辑 `.env`，填入你的 API Key：
+
+```env
+# API 密钥
+ANTHROPIC_API_KEY=sk-your-key-here
+
+# API 端点（可选，默认 Anthropic 官方）
+# 第三方中转示例：
+# ANTHROPIC_BASE_URL=https://your-proxy.com
+
+# 模型
+ANTHROPIC_MODEL=claude-haiku-4-5-20251001
+```
+
+### 4. 启动
+
+**PowerShell（Windows）：**
+```powershell
+.\start.ps1
+```
+
+**Bash（macOS / Linux）：**
+```bash
+bash start.sh
+```
+
+**无头模式（单次问答）：**
+```bash
+node cli.js -p --bare "你的问题"
+```
+
+## 环境变量说明
+
+| 变量 | 必填 | 说明 |
+|------|------|------|
+| `ANTHROPIC_API_KEY` | 二选一 | API Key，通过 x-api-key 头发送 |
+| `ANTHROPIC_AUTH_TOKEN` | 二选一 | Auth Token，通过 Authorization: Bearer 头发送 |
+| `ANTHROPIC_BASE_URL` | 否 | 自定义 API 端点，默认 Anthropic 官方 |
+| `ANTHROPIC_MODEL` | 否 | 默认模型 |
+| `ANTHROPIC_DEFAULT_SONNET_MODEL` | 否 | Sonnet 级别模型映射 |
+| `ANTHROPIC_DEFAULT_HAIKU_MODEL` | 否 | Haiku 级别模型映射 |
+| `ANTHROPIC_DEFAULT_OPUS_MODEL` | 否 | Opus 级别模型映射 |
+| `DISABLE_TELEMETRY` | 否 | 设为 1 禁用遥测 |
+| `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | 否 | 设为 1 禁用非必要网络请求 |
+
+## 自定义 & 探索
+
+这是一个**可以自由改造**的版本！以下是一些你可以尝试的方向：
+
+### 🎨 修改主题色
+编辑 `src/utils/theme.ts`，添加你自己的主题色板。本项目已内置一个 `dark-cyan` 青蓝色主题作为示例。
+
+### 🐑 修改 Logo
+编辑 `src/components/LogoV2/Clawd.tsx`，用 Unicode 像素画替换默认 Logo。
+
+### 💬 修改欢迎文字
+编辑 `src/components/LogoV2/WelcomeV2.tsx` 和 `LogoV2.tsx`。
+
+### 🔍 深入学习架构
+详细的修复过程和技术分析见 [RECOVERY_GUIDE.md](./RECOVERY_GUIDE.md)。
+
+**改完源码后记得重新构建：**
+```bash
+node build.mjs
+```
+
+## 相对于原始恢复源码的修复
+
+恢复的源码无法直接运行，本项目修复了 **11 类共计 200+ 个问题**：
+
+| 问题 | 根因 | 修复方式 |
+|------|------|----------|
+| Windows 路径反斜杠 | `path.relative()` 产生 `\` | 所有路径规范化为 `/` |
+| ESM 裸路径缺扩展名 | npm 包用无扩展名 import | 自定义 ESM resolve hook |
+| 非 JS 文件被 import | `.md`/`.txt` 无法作为 ES module | ESM load hook 返回文本模块 |
+| 内部包缺失 | `@anthropic-ai/sandbox-runtime` 等 | 智能 stub 生成（含完整静态方法） |
+| 源码函数缺失 | source map 恢复不完整 | 自动扫描 + 补丁缺失导出 |
+| ESM 中 require() 未定义 | `"type": "module"` 下无 require | 注入 createRequire shim |
+| bun:bundle shim 提升问题 | `const` 替换不被提升 | 改为文件头 prepend |
+| `require("src/...")` 未重写 | build 遗漏 require + side-effect import | 补全 3 种路径重写模式 |
+| `require(".txt")` 不兼容 | Node CJS 不能 require txt 文件 | 转为 readFileSync |
+| `MACRO.*` 未替换 | esbuild define 不完整 | 补全所有 MACRO 定义 |
+| 130+ 缺失模块 | 内部功能模块未恢复 | 自动生成 stub 文件 |
+
+所有修复均已自动化到 `build.mjs` 中，`node build.mjs` 一键完成。
+
+## 项目结构
+
+```
+├── src/                  # 恢复的 TypeScript 源码（~1888 文件）
+├── build.mjs             # 构建脚本（核心，14 步自动化流水线）
+├── node-esm-hooks.mjs    # Node.js ESM 兼容层
+├── cli.js                # 入口文件（构建自动生成）
+├── dist/                 # 构建输出（git 忽略）
+├── start.ps1/.sh/.bat    # 启动脚本
+├── .env.example          # 环境变量模板
+├── RECOVERY_GUIDE.md     # 详细技术修复文档
+└── package.json
+```
+
+## 技术栈
+
+| 类别 | 技术 |
+|------|------|
+| 运行时 | Node.js (>= 18) |
+| 语言 | TypeScript |
+| 终端 UI | React + Ink |
+| CLI 解析 | Commander.js |
+| API | Anthropic SDK |
+| 构建 | esbuild + 自定义后处理 |
+
+## 免责声明
+
+本项目基于从 Claude Code npm 包 source map 恢复的源码，仅供学习和研究用途。所有原始源码版权归 Anthropic 所有。使用本项目需自行准备 API 密钥。
+
+---
+
+# English
+
+**Make Claude Code source actually run — then hack it your way.**
+
+The official Claude Code npm package ships with complete source maps. The community recovered ~1888 TypeScript source files from them. However, the recovered source **cannot run as-is** — it was built for Bun runtime, missing numerous internal dependencies, with broken paths and module errors.
+
+This project **fixes every single startup blocker**, bringing the full Ink TUI interactive interface to life on standard Node.js. Chat with Claude in your terminal just like the official Claude Code, and freely explore & modify the source — I've already customized the theme and logo as a demo.
+
+## Screenshot
+
+<!-- TODO: Replace with your actual screenshot -->
+![Screenshot](./screenshots/demo.png)
+
+## Features
+
+- **Full TUI Interactive Interface** — identical terminal experience to official Claude Code
+- **`--print` Headless Mode** — for scripts and CI pipelines
+- **Runs on Node.js** — no Bun required, standard Node.js >= 18
+- **Third-party API Support** — any Anthropic Messages API compatible proxy
+- **Fully Hackable** — modify themes, logo, UI components, learn Claude Code internals
+- **One-command Build** — `node build.mjs` handles all adaptations automatically
+
+## Quick Start
+
+### 1. Clone & Install
+
+```bash
+git clone https://github.com/your-username/claude-code-diy.git
+cd claude-code-diy
+npm install
+```
+
+### 2. Build
+
+```bash
+node build.mjs
+```
+
+### 3. Configure API
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your API key:
+
+```env
+ANTHROPIC_API_KEY=sk-your-key-here
+ANTHROPIC_MODEL=claude-haiku-4-5-20251001
+# ANTHROPIC_BASE_URL=https://your-proxy.com  # optional
+```
+
+### 4. Run
+
+```powershell
+# PowerShell (Windows)
+.\start.ps1
+
+# Bash (macOS / Linux)
+bash start.sh
+
+# Headless mode (single query)
+node cli.js -p --bare "your question"
+```
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ANTHROPIC_API_KEY` | One of two | API Key, sent via x-api-key header |
+| `ANTHROPIC_AUTH_TOKEN` | One of two | Auth Token, sent via Authorization: Bearer |
+| `ANTHROPIC_BASE_URL` | No | Custom API endpoint (default: Anthropic official) |
+| `ANTHROPIC_MODEL` | No | Default model |
+| `ANTHROPIC_DEFAULT_SONNET_MODEL` | No | Sonnet model alias |
+| `ANTHROPIC_DEFAULT_HAIKU_MODEL` | No | Haiku model alias |
+| `ANTHROPIC_DEFAULT_OPUS_MODEL` | No | Opus model alias |
+| `DISABLE_TELEMETRY` | No | Set to 1 to disable telemetry |
+
+## Customization
+
+This is a **fully hackable** version! Things you can try:
+
+- **Themes**: Edit `src/utils/theme.ts` — includes a custom `dark-cyan` theme
+- **Logo**: Edit `src/components/LogoV2/Clawd.tsx` — Unicode pixel art
+- **Welcome text**: Edit `src/components/LogoV2/WelcomeV2.tsx`
+- **Deep dive**: See [RECOVERY_GUIDE.md](./RECOVERY_GUIDE.md) for full technical breakdown
+
+**After editing source, rebuild:**
+```bash
+node build.mjs
+```
+
+## What Was Fixed
+
+The recovered source had **11 categories of issues totaling 200+ individual fixes**:
+
+| Issue | Root Cause | Fix |
+|-------|-----------|-----|
+| Windows backslash paths | `path.relative()` produces `\` | Normalize all paths to `/` |
+| ESM bare imports missing extensions | npm packages use extensionless imports | Custom ESM resolve hook |
+| Non-JS files imported as modules | `.md`/`.txt` can't be ES modules | ESM load hook returns text modules |
+| Missing internal packages | `@anthropic-ai/sandbox-runtime` etc. | Smart stub generation with static methods |
+| Missing source functions | Incomplete source map recovery | Auto-scan + patch missing exports |
+| `require()` undefined in ESM | `"type": "module"` disables require | Inject createRequire shim |
+| bun:bundle shim hoisting | `const` replacement not hoisted | Prepend to file start |
+| `require("src/...")` not rewritten | Build missed require + side-effect imports | Added 3 rewrite patterns |
+| `require(".txt")` incompatible | Node CJS can't require txt files | Convert to readFileSync |
+| `MACRO.*` not replaced | Incomplete esbuild defines | Added all MACRO definitions |
+| 130+ missing modules | Internal modules not recovered | Auto-generate stub files |
+
+All fixes are automated in `build.mjs` — one command does everything.
 
 ## Project Structure
 
 ```
-src/
-├── cli/           # CLI entrypoint and argument parsing
-├── commands/      # Command implementations
-├── components/    # UI components (Ink/React)
-├── constants/     # App constants and configuration
-├── context/       # Context management
-├── hooks/         # React hooks
-├── ink/           # Terminal UI (Ink framework)
-├── services/      # Core services
-├── skills/        # Skill definitions
-├── tools/         # Tool implementations (file editing, search, etc.)
-├── types/         # TypeScript type definitions
-├── utils/         # Utility functions
-├── main.tsx       # Main application entry
-├── query.ts       # Query handling
-└── ...
+├── src/                  # Recovered TypeScript source (~1888 files)
+├── build.mjs             # Build script (core: 14-step automated pipeline)
+├── node-esm-hooks.mjs    # Node.js ESM compatibility layer
+├── cli.js                # Entry point (auto-generated by build)
+├── dist/                 # Build output (git-ignored)
+├── start.ps1/.sh/.bat    # Launch scripts
+├── .env.example          # Environment template
+├── RECOVERY_GUIDE.md     # Detailed technical recovery guide
+└── package.json
 ```
+
+## Tech Stack
+
+| Category | Technology |
+|----------|-----------|
+| Runtime | Node.js (>= 18) |
+| Language | TypeScript |
+| Terminal UI | React + Ink |
+| CLI Parsing | Commander.js |
+| API | Anthropic SDK |
+| Build | esbuild + custom post-processing |
 
 ## Disclaimer
 
-All code in this repository is the intellectual property of [Anthropic](https://www.anthropic.com/). This repository is provided for **educational and reference purposes only**. Please refer to Anthropic's [license terms](https://www.npmjs.com/package/@anthropic-ai/claude-code/v/2.1.88) for usage restrictions.
-
-This is **not** affiliated with, endorsed by, or supported by Anthropic.
+Based on source recovered from Claude Code npm package source maps. For educational and research purposes only. All original source code copyright belongs to Anthropic. You must provide your own API key.
