@@ -296,12 +296,10 @@ export function getAnthropicApiKeyWithSource(
     }
   }
   // Check for ANTHROPIC_API_KEY before checking the apiKeyHelper or /login-managed key
-  if (
-    apiKeyEnv &&
-    getGlobalConfig().customApiKeyResponses?.approved?.includes(
-      normalizeApiKeyForConfig(apiKeyEnv),
-    )
-  ) {
+  // [build-your-own-claude-code] Simplified: if env var is set, always use it.
+  // Original code required the key to be in an "approved" list (getGlobalConfig().customApiKeyResponses).
+  // This made third-party API keys unusable without first going through /login approval.
+  if (apiKeyEnv) {
     return {
       key: apiKeyEnv,
       source: 'ANTHROPIC_API_KEY',

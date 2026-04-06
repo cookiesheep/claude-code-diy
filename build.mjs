@@ -661,5 +661,58 @@ if (existsSync(helpersFile)) {
 }
 console.log('  ✓ Applied post-build patches');
 
+// ── Step 7 (Optional): Lab mode — inject simplified query ──────────────
+const labMode = process.argv.includes('--lab');
+if (labMode) {
+  console.log('\n  ⚗️  Lab mode enabled — injecting query-lab.ts...');
+  const queryLabSrc = join(__dirname, 'src', 'query-lab.ts');
+  if (!existsSync(queryLabSrc)) {
+    console.error('  ✗ src/query-lab.ts not found!');
+    process.exit(1);
+  }
+  // Transpile query-lab.ts with same settings as main build
+  const labResult = await esbuild.build({
+    entryPoints: [queryLabSrc],
+    outdir: join(DIST),
+    format: 'esm',
+    platform: 'node',
+    target: 'node18',
+    sourcemap: false,
+    define: {
+      'MACRO.VERSION': JSON.stringify(pkg.version || '0.0.0'),
+      'MACRO.PACKAGE_URL': JSON.stringify('https://www.npmjs.com/package/@anthropic-ai/claude-code'),
+      'MACRO.BUILD_TIME': JSON.stringify(new Date().toISOString()),
+      'MACRO.ISSUES_EXPLAINER': JSON.stringify(''),
+      'MACRO.VERSION_CHANGELOG': JSON.stringify(''),
+      'MACRO.NATIVE_PACKAGE_URL': JSON.stringify(''),
+      'MACRO.FEEDBACK_CHANNEL': JSON.stringify(''),
+    },
+    write: true,
+  });
+  // Now replace the original query.js with our lab version
+  const queryLabOut = join(DIST, 'query-lab.js');
+  const queryOriginal = join(DIST, 'query.js');
+  if (existsSync(queryLabOut)) {
+    // Read the lab version, apply same post-processing as main build
+    let labCode = readFileSync(queryLabOut, 'utf-8');
+    // Apply bun:bundle shim (feature() always returns false)
+    labCode = `const feature = () => false;\nconst __BUN_MACRO = {};\n` + labCode;
+    // Rewrite bare src/ imports to relative dist/ paths (same as Step 3b)
+    labCode = labCode.replace(
+      /from\s+["']src\/(.*?)["']/g,
+      (match, p1) => `from "./${p1}"`
+    );
+    writeFileSync(queryOriginal, labCode);
+    // Clean up the separate file
+    rmSync(queryLabOut, { force: true });
+    console.log('  ✓ Replaced dist/query.js with lab version');
+  } else {
+    console.error('  ✗ Failed to compile query-lab.ts');
+  }
+}
+
 console.log(`\n  Build complete! 🎉\n`);
 console.log(`  Run with:  node cli.js\n`);
+if (labMode) {
+  console.log(`  ⚗️  Lab mode active — using simplified agent loop\n`);
+}

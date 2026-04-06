@@ -55,22 +55,29 @@ node build.mjs
 
 ### 3. 配置 API
 
+> 💡 **没有官方 Claude API？** 推荐使用 [DeepSeek API](https://platform.deepseek.com/)（费用极低）或其他第三方代理。详见 **[第三方 API 配置教程 →](https://cookiesheep.github.io/build-your-own-claude-code/guide/api-setup/)**
+
 ```bash
 cp .env.example .env
 ```
 
 编辑 `.env`，填入你的 API Key：
 
+**使用 Anthropic 官方 API：**
 ```env
-# API 密钥
-ANTHROPIC_API_KEY=sk-your-key-here
-
-# API 端点（可选，默认 Anthropic 官方）
-# 第三方中转示例：
-# ANTHROPIC_BASE_URL=https://your-proxy.com
-
-# 模型
+ANTHROPIC_API_KEY=sk-ant-your-key-here
 ANTHROPIC_MODEL=claude-haiku-4-5-20251001
+```
+
+**使用 DeepSeek API（推荐，价格低廉）：**
+```env
+ANTHROPIC_BASE_URL=https://api.deepseek.com/anthropic
+ANTHROPIC_AUTH_TOKEN=sk-your-deepseek-key
+ANTHROPIC_MODEL=deepseek-chat
+ANTHROPIC_DEFAULT_HAIKU_MODEL=deepseek-chat
+ANTHROPIC_DEFAULT_SONNET_MODEL=deepseek-chat
+CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+API_TIMEOUT_MS=600000
 ```
 
 ### 4. 启动
@@ -241,10 +248,23 @@ cp .env.example .env
 
 Edit `.env` with your API key:
 
+> 💡 **No official Claude API?** Use [DeepSeek API](https://platform.deepseek.com/) (very cheap) or other proxies. See **[Third-party API setup guide →](https://cookiesheep.github.io/build-your-own-claude-code/guide/api-setup/)**
+
+**Using Anthropic official API:**
 ```env
-ANTHROPIC_API_KEY=sk-your-key-here
+ANTHROPIC_API_KEY=sk-ant-your-key-here
 ANTHROPIC_MODEL=claude-haiku-4-5-20251001
-# ANTHROPIC_BASE_URL=https://your-proxy.com  # optional
+```
+
+**Using DeepSeek API (recommended, low cost):**
+```env
+ANTHROPIC_BASE_URL=https://api.deepseek.com/anthropic
+ANTHROPIC_AUTH_TOKEN=sk-your-deepseek-key
+ANTHROPIC_MODEL=deepseek-chat
+ANTHROPIC_DEFAULT_HAIKU_MODEL=deepseek-chat
+ANTHROPIC_DEFAULT_SONNET_MODEL=deepseek-chat
+CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+API_TIMEOUT_MS=600000
 ```
 
 ### 4. Run
