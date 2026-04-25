@@ -16,7 +16,7 @@
 
 import * as esbuild from 'esbuild';
 import { readFileSync, writeFileSync, mkdirSync, existsSync, cpSync, rmSync, readdirSync } from 'fs';
-import { join, dirname, relative } from 'path';
+import { join, dirname, relative, parse } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -54,6 +54,96 @@ const vendorDir = join(__dirname, 'vendor');
 const srcFiles = walkDir(srcDir, ['.ts', '.tsx']);
 const vendorFiles = existsSync(vendorDir) ? walkDir(vendorDir, ['.ts', '.tsx']) : [];
 const allFiles = [...srcFiles, ...vendorFiles];
+
+function parseLabMode(argv) {
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === '--lab') {
+      const selector = argv[i + 1];
+      return {
+        enabled: true,
+        selector: selector && !selector.startsWith('--') ? selector : null,
+      };
+    }
+    if (arg.startsWith('--lab=')) {
+      return {
+        enabled: true,
+        selector: arg.slice('--lab='.length) || null,
+      };
+    }
+  }
+
+  return { enabled: false, selector: null };
+}
+
+function buildLabSuffixes(selector) {
+  if (!selector) return ['-lab'];
+
+  const trimmed = String(selector).trim();
+  const suffixes = new Set([`-lab${trimmed}`, `-lab-${trimmed}`]);
+
+  if (/^\d+$/.test(trimmed)) {
+    const numeric = String(parseInt(trimmed, 10));
+    const padded = numeric.padStart(2, '0');
+    suffixes.add(`-lab${numeric}`);
+    suffixes.add(`-lab-${numeric}`);
+    suffixes.add(`-lab${padded}`);
+    suffixes.add(`-lab-${padded}`);
+  }
+
+  return [...suffixes];
+}
+
+function getLabVariantBaseName(stem, selector) {
+  for (const suffix of buildLabSuffixes(selector)) {
+    if (stem.endsWith(suffix)) {
+      return stem.slice(0, -suffix.length);
+    }
+  }
+
+  return null;
+}
+
+function toDistJsPath(sourceFile) {
+  return join(DIST, relative(__dirname, sourceFile)).replace(/\.(ts|tsx)$/i, '.js');
+}
+
+function discoverLabSwaps(files, selector) {
+  const swaps = [];
+  const targetToVariant = new Map();
+
+  for (const sourceFile of files) {
+    const { dir, ext, name } = parse(sourceFile);
+    const baseName = getLabVariantBaseName(name, selector);
+    if (!baseName) continue;
+
+    const targetCandidates = ['.ts', '.tsx']
+      .map((candidateExt) => join(dir, `${baseName}${candidateExt}`))
+      .filter((candidatePath) => existsSync(candidatePath));
+
+    if (targetCandidates.length === 0) {
+      throw new Error(
+        `Lab variant ${relative(__dirname, sourceFile)} does not have a matching base source file`
+      );
+    }
+
+    const targetSource =
+      targetCandidates.find((candidatePath) => candidatePath.endsWith(ext)) ?? targetCandidates[0];
+    const targetKey = targetSource.toLowerCase();
+
+    if (targetToVariant.has(targetKey)) {
+      throw new Error(
+        `Multiple lab variants map to ${relative(__dirname, targetSource)}: ` +
+        `${targetToVariant.get(targetKey)} and ${relative(__dirname, sourceFile)}`
+      );
+    }
+
+    targetToVariant.set(targetKey, relative(__dirname, sourceFile));
+    swaps.push({ labSource: sourceFile, targetSource });
+  }
+
+  return swaps;
+}
 
 console.log(`  ✓ Found ${srcFiles.length} source files + ${vendorFiles.length} vendor files`);
 
@@ -662,57 +752,43 @@ if (existsSync(helpersFile)) {
 console.log('  ✓ Applied post-build patches');
 
 // ── Step 7 (Optional): Lab mode — inject simplified query ──────────────
-const labMode = process.argv.includes('--lab');
-if (labMode) {
-  console.log('\n  ⚗️  Lab mode enabled — injecting query-lab.ts...');
-  const queryLabSrc = join(__dirname, 'src', 'query-lab.ts');
-  if (!existsSync(queryLabSrc)) {
-    console.error('  ✗ src/query-lab.ts not found!');
+const labMode = parseLabMode(process.argv);
+if (labMode.enabled) {
+  const requestedLab = labMode.selector ?? 'legacy';
+  console.log(`\n  ⚗️  Lab mode enabled — discovering *-lab variants for ${requestedLab}...`);
+
+  let labSwaps;
+  try {
+    labSwaps = discoverLabSwaps(allFiles, labMode.selector);
+  } catch (err) {
+    console.error(`  ✗ ${err.message}`);
     process.exit(1);
   }
-  // Transpile query-lab.ts with same settings as main build
-  const labResult = await esbuild.build({
-    entryPoints: [queryLabSrc],
-    outdir: join(DIST),
-    format: 'esm',
-    platform: 'node',
-    target: 'node18',
-    sourcemap: false,
-    define: {
-      'MACRO.VERSION': JSON.stringify(pkg.version || '0.0.0'),
-      'MACRO.PACKAGE_URL': JSON.stringify('https://www.npmjs.com/package/@anthropic-ai/claude-code'),
-      'MACRO.BUILD_TIME': JSON.stringify(new Date().toISOString()),
-      'MACRO.ISSUES_EXPLAINER': JSON.stringify(''),
-      'MACRO.VERSION_CHANGELOG': JSON.stringify(''),
-      'MACRO.NATIVE_PACKAGE_URL': JSON.stringify(''),
-      'MACRO.FEEDBACK_CHANNEL': JSON.stringify(''),
-    },
-    write: true,
-  });
-  // Now replace the original query.js with our lab version
-  const queryLabOut = join(DIST, 'query-lab.js');
-  const queryOriginal = join(DIST, 'query.js');
-  if (existsSync(queryLabOut)) {
-    // Read the lab version, apply same post-processing as main build
-    let labCode = readFileSync(queryLabOut, 'utf-8');
-    // Apply bun:bundle shim (feature() always returns false)
-    labCode = `const feature = () => false;\nconst __BUN_MACRO = {};\n` + labCode;
-    // Rewrite bare src/ imports to relative dist/ paths (same as Step 3b)
-    labCode = labCode.replace(
-      /from\s+["']src\/(.*?)["']/g,
-      (match, p1) => `from "./${p1}"`
+
+  if (labSwaps.length === 0) {
+    console.error(`  ✗ No lab source files found for ${requestedLab}`);
+    process.exit(1);
+  }
+
+  for (const { labSource, targetSource } of labSwaps) {
+    const labOutput = toDistJsPath(labSource);
+    const targetOutput = toDistJsPath(targetSource);
+
+    if (!existsSync(labOutput)) {
+      console.error(`  ✗ Missing transpiled lab output: ${relative(__dirname, labOutput)}`);
+      process.exit(1);
+    }
+
+    writeFileSync(targetOutput, readFileSync(labOutput, 'utf-8'));
+    rmSync(labOutput, { force: true });
+    console.log(
+      `  ✓ Swapped ${relative(__dirname, targetOutput)} ← ${relative(__dirname, labOutput)}`
     );
-    writeFileSync(queryOriginal, labCode);
-    // Clean up the separate file
-    rmSync(queryLabOut, { force: true });
-    console.log('  ✓ Replaced dist/query.js with lab version');
-  } else {
-    console.error('  ✗ Failed to compile query-lab.ts');
   }
 }
 
 console.log(`\n  Build complete! 🎉\n`);
 console.log(`  Run with:  node cli.js\n`);
-if (labMode) {
-  console.log(`  ⚗️  Lab mode active — using simplified agent loop\n`);
+if (labMode.enabled) {
+  console.log(`  ⚗️  Lab mode active — using lab-specific source swaps\n`);
 }
