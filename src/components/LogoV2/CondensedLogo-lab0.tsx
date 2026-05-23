@@ -89,11 +89,11 @@ export function CondensedLogo() {
   let t5;
   if ($[8] === Symbol.for("react.memo_cache_sentinel")) {
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // TODO-Lab0: 把 "YOUR_BRAND" 换成你的品牌名
-    // 例如: "🐕 Samoyed Code" 或 "🦫 Capybara Code"
+    // TODO-Lab0: 默认保持 Claude Code。
+    // 如果你想做个性化，可以把下面的文字换成自己的品牌名。
     // 改完之后重新构建 (node build.mjs --lab 0)
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    t5 = <Text bold={true}>YOUR_BRAND</Text>;
+    t5 = <Text bold={true}>Claude Code</Text>;
     $[8] = t5;
   } else {
     t5 = $[8];

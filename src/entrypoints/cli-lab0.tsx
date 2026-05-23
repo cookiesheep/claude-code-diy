@@ -38,9 +38,9 @@ async function main(): Promise<void> {
     // MACRO.VERSION is inlined at build time
     // biome-ignore lint/suspicious/noConsole:: intentional console output
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // TODO-Lab0: 把 "YOUR_BRAND" 换成你的品牌名
+    // TODO-Lab0: 默认保持 Claude Code。想个性化时再改括号里的文字。
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    console.log(`${MACRO.VERSION} (YOUR_BRAND)`);
+    console.log(`${MACRO.VERSION} (Claude Code)`);
     return;
   }
 

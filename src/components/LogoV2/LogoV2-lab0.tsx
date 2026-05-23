@@ -249,12 +249,12 @@ export function LogoV2() {
   const layoutMode = getLayoutMode(columns);
   const userTheme = resolveThemeSetting(getGlobalConfig().theme);
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // TODO-Lab0: 把 "YOUR_BRAND" 换成你的品牌名
-  // 例如: "🐕 Samoyed Code" 或 "🦫 Capybara Code"
+  // TODO-Lab0: 默认保持 Claude Code。
+  // 如果你想做个性化，可以把下面两处文字换成自己的品牌名。
   // 改完之后重新构建 (node build.mjs --lab 0)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  const borderTitle = ` ${color("claude", userTheme)("YOUR_BRAND")} ${color("inactive", userTheme)(`v${version}`)} `;
-  const compactBorderTitle = color("claude", userTheme)(" YOUR_BRAND ");
+  const borderTitle = ` ${color("claude", userTheme)("Claude Code")} ${color("inactive", userTheme)(`v${version}`)} `;
+  const compactBorderTitle = color("claude", userTheme)(" Claude Code ");
   if (layoutMode === "compact") {
     let welcomeMessage = formatWelcomeMessage(username);
     if (stringWidth(welcomeMessage) > columns - 4) {
